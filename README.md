@@ -1,5 +1,5 @@
-# TAMU_SRT
-Texas A&amp;M University Sounding Rocketry Team
+## TAMU_SRT
+Texas A&amp;M University Sounding Rocketry Team Repository
 
 # Description
 This reprository contains the work I have done on Texas A&M University Rocket Engine Design Student Organization.
