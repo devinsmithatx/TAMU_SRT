@@ -12,7 +12,7 @@ m = length(act.rcs) + 1;                                % number actuators
 
 % UPPER LIMITS
 actuator_upper = [engine_max; ones(m-1,1)*rcs_max];
-actyatir_upper = engine_max - act.u_bar(1);
+actuator_upper(1) = engine_max - act.u_bar(1);
 
 % LOWER LIMITS
 actuator_lower = -actuator_upper;             % rcs min

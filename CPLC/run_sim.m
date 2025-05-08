@@ -37,7 +37,7 @@ addpath("simulink\");        % add simulink folder filepath
 
 % SIMULATION PARAMETERS
 misc.T = 20;                % [s] simulation length
-misc.type = "interactive";  % inner, outer, or interactive
+misc.type = "outer";  % inner, outer, or interactive
 misc.run_sim = true;        % run sim or go straight to plotting
 misc.plot = true;           % generate plots
 
@@ -67,23 +67,11 @@ ic.p0 =  [0.000;            % [m]       x position initial condition
 %% USER INPUTS - DYNAMICS MODELING 
 % Define all the actuator and rigid body dynamics in this section.
 
-% ACTUATOR DYNAMICS MODELING
-act.rcs = [1 2 3];          %           Keep as [1 2 3] for now
-act.tau_engine = 1/2;       % [Hz]      engine time response time
-act.tau_rcs = 1/.03;        % [Hz]      rcs response time
-act.lx = 0.25;              % [m]       thruster distance from C.G. along x
-act.ly = 0.20;              % [m]       thruster distance from C.G. along y
-act.rcs_max = 0.02224;      % [N]       max RCS thrust
-act.engine_max = 22.4*1.25; % [N]       max engine thrust
-
 % RIGID BODY DYNAMICS MODELING
-body.m = 2.04117;           % [kg]      hopper mass
-body.Ixx = 0.15952251;      % [kg*m^2]  Ixx moment of inertia
-body.Iyy = 0.03961608;      % [kg*m^2]  Iyy moment of inertia
-body.Izz = 0.12547452;      % [kg*m^2]  Izz moment of inertia
-body.Ixy = 0.00654190;      % [kg*m^2]  Ixy moment of inertia
-body.Ixz = 0.00578778;      % [kg*m^2]  Ixz moment of inertia
-body.Iyz = 0.04033438;      % [kg*m^2]  Iyz moment of inertia
+body.m = 3.14764283;           % [kg]      hopper mass
+body.I = [0.01057638 -0.00015169 0.00032221;
+         -0.00015169  0.09672328 -0.00000396;
+          0.00032221 -0.00000396 0.09794642;];
 body.x_bar = [0.000;        % [rad]     roll trim point
               0.000;        % [rad]     pitch trim point  
               0.000;        % [rad]     yaw trim point
@@ -97,6 +85,17 @@ body.x_bar = [0.000;        % [rad]     roll trim point
               0.000;        % [N]       RCS pair trim 
               0.000;        % [N]       RCS pair trim 
               0.000;];      % [N]       RCS pair trim
+
+body.x_linearization = body.x_bar; 
+
+% ACTUATOR DYNAMICS MODELING
+act.rcs = [1 2 3];            %           Keep as [1 2 3] for now
+act.tau_engine = 1/2;         % [Hz]      engine time response time
+act.tau_rcs = 1/.03;          % [Hz]      rcs response time
+act.lx = 0.234;               % [m]       thruster distance from C.G. along x
+act.ly = 0.193;               % [m]       thruster distance from C.G. along y
+act.rcs_max = 0.2224;         % [N]       max RCS thrust
+act.engine_max = body.m*9.81*1.25; % [N]       max engine thrust
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% USER INPUTS - GUIDANCE MODELING
@@ -170,11 +169,25 @@ ctrl.Q(10:end, 10:end) = 0*ctrl.R;        % actuator states
 % ADDITONAL DYANMICS MODELING
 act.u_bar = body.x_bar(10:end);                % actuator trim
 [act.upper, act.lower] = actuator_limits(act); % actuator limits
-body.I = inertia_tensor(body);                 % [kg*m^2] intertia tensor
 [body.A, body.B] = state_space(body, act);     % linearization of dynamics
 
 % ADDITIONAL NAVIGATION MODELING
 [nav.phi, nav.gamma] = c2d(body.A, body.B, nav.T); % discetize dynamics
+
+% ADDITIONAL CONTROL MODELING (NZSP)
+[ctrl.phi, ctrl.gamma] = c2d(body.A, body.B, ctrl.T); % discetize dynamics
+nx = width(body.A); nu = width(body.B);
+
+% setpoint for phi, u, v, w
+ctrl.C = [zeros(nu) zeros(nu, nx - nu)]; 
+ctrl.C(:,3:6) = eye(nu); ctrl.C(1,3) = 0; ctrl.C(1,1) = 1;
+D = zeros(nu);
+
+% gain calc
+qpm  = [ctrl.phi - eye(nx) ctrl.gamma; ctrl.C D];
+qpmi = inv(qpm);
+ctrl.X12 = qpmi(1:nx, nx+1:nx+nu);
+ctrl.X22 = qpmi(nx+1:nx+nu,nx+1:nx+nu);
 
 % ADDITIONAL CONTROL MODELING
 ctrl.K = lqrd(body.A, body.B, ctrl.Q, ctrl.R, ctrl.T);  % controller gain

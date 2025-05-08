@@ -57,68 +57,74 @@ hl.Layout.Tile = 'south';
 
 % PLOT ENGINE USAGE
 figure(); clf;
-tiledlayout(1, 1, 'Padding', 'none', 'TileSpacing', 'compact')
-nexttile; hold on;
-line1 = stairs(tk1,u(1,:),'color','#80B3FF','linewidth',1,'DisplayName','command');
-line2 = stairs(tk2,xh(10,:),'r','linewidth',1,'DisplayName','estimate');
-line3 = plot(t,x(10,:),'b','linewidth',1,'DisplayName','true');
-title("Engine Usage"); 
-legend(Location="best");
-xlabel("t (s)"); 
+tiledlayout(1, 1, 'Padding', 'none', 'TileSpacing', 'compact');
+
+% Define consistent tick values for 0% to 100%
+tick_vals = linspace(0, act.engine_max, 5);
+
+nexttile;
+yyaxis left
+hold on;
+
+% plot data
+line1 = stairs(tk1, u(1,:), 'color', '#80B3FF','linestyle', '-', 'linewidth', 1, 'DisplayName', 'command');
+line2 = stairs(tk2, xh(10,:), 'r-', 'linewidth', 1, 'DisplayName', 'estimate');
+line3 = plot(t, x(10,:), 'b-', 'linewidth', 1, 'DisplayName', 'true');
+
+% set thrust values
+ylim([0, act.engine_max]);
+set(gca, 'YTick', tick_vals);
 ylabel("Thrust (N)");
-hl = legend([line1 line2 line3], 'NumColumns',3);
+
+% set percent values
+yyaxis right
+ylim([0, act.engine_max]);
+set(gca, 'YTick', tick_vals);
+set(gca, 'YTickLabel', sprintfc('%.0f%%', tick_vals / act.engine_max * 100));
+ylabel("Thrust (% Max)");
+
+xlabel("t (s)");
+title("Engine Usage");
+
+% legend
+hl = legend([line1 line2 line3], 'NumColumns', 3);
 hl.Layout.Tile = 'south';
 
 % PLOT RCS THRUSTER USAGE
 figure(); clf;
-tiledlayout(length(rcs), 1, 'Padding', 'none', 'TileSpacing', 'compact')
+tiledlayout(length(rcs), 1, 'Padding', 'none', 'TileSpacing', 'compact');
+
+% Define consistent tick locations (e.g., every 25% of max thrust)
+tick_vals = linspace(-act.rcs_max, act.rcs_max, 5);
+
 for i = 2:height(u)
-    nexttile; hold on;
-    line1 = stairs(tk1,u(i,:),'color','#80B3FF','linewidth',1,'DisplayName','command');
-    line2 = stairs(tk2,xh(9+i,:),'r','linewidth',1,'DisplayName','estimate');
-    line3 = plot(t,x(9+i,:),'b','linewidth',1,'DisplayName','true');
-    title(strcat("RCS Pair ", num2str(i - 1)));
-    xlabel("t (s)"); 
+    nexttile;
+    yyaxis left
+    hold on;
+
+    % plot data
+    line1 = stairs(tk1, u(i,:), 'color', '#80B3FF',  'linestyle', '-','linewidth', 1, 'DisplayName', 'command');
+    line2 = stairs(tk2, xh(9+i,:), 'r-', 'linewidth', 1, 'DisplayName', 'estimate');
+    line3 = plot(t, x(9+i,:), 'b-', 'linewidth', 1, 'DisplayName', 'true');
+
+    % set thrust values
+    ylim([min(tick_vals), max(tick_vals)]);
+    set(gca, 'YTick', tick_vals);
     ylabel("Thrust (N)");
-end
-hl = legend([line1 line2 line3], 'NumColumns',3);
-hl.Layout.Tile = 'south';
+    
+    % set percent values
+    yyaxis right
+    ylim([min(tick_vals), max(tick_vals)]);
+    set(gca, 'YTick', tick_vals);
+    set(gca, 'YTickLabel', sprintfc('%+.0f%%', tick_vals / act.rcs_max * 100));
+    ylabel("Thrust (% Max)");
 
-% PLOT ENGINE USAGE PERCENT
-x(10, :) = x(10,:)/act.engine_max*100;          % convert to percent
-xh(10, :) = xh(10,:)/act.engine_max*100;          % convert to percent
-u(1,:) = u(1,:)/act.engine_max*100;             % convert to percent
-
-figure(); clf;
-tiledlayout(1, 1, 'Padding', 'none', 'TileSpacing', 'compact')
-nexttile; hold on;
-line1 = stairs(tk1,u(1,:),'color','#80B3FF','linewidth',1,'DisplayName','command');
-line2 = stairs(tk2,xh(10,:),'r','linewidth',1,'DisplayName','estimate');
-line3 = plot(t,x(10,:),'b','linewidth',1,'DisplayName','true');
-title("Engine Usage"); 
-legend(Location="best");
-xlabel("t (s)"); 
-ylabel("Thrust (% Max Thrust)");
-hl = legend([line1 line2 line3], 'NumColumns',3);
-hl.Layout.Tile = 'south';
-
-% PLOT RCS THRUSTER USAGE PERCENT
-x= x/act.rcs_max*100;                           % convert to percent
-xh= xh/act.rcs_max*100;                           % convert to percent
-u = u/act.rcs_max*100;                          % convert to percent
-
-figure(); clf;
-tiledlayout(length(rcs), 1, 'Padding', 'none', 'TileSpacing', 'compact')
-for i = 2:height(u)
-    nexttile; hold on;
-    line1 = stairs(tk1,u(i,:),'color','#80B3FF','linewidth',1,'DisplayName','command');
-    line2 = stairs(tk2,xh(9+i,:),'r','linewidth',1,'DisplayName','estimate');
-    line3 = plot(t,x(9+i,:),'b','linewidth',1,'DisplayName','true');
     title(strcat("RCS Pair ", num2str(i - 1)));
-    xlabel("t (s)"); 
-    ylabel("Thrust (% Max Thrust)");
+    xlabel("t (s)");
 end
-hl = legend([line1 line2 line3], 'NumColumns',3);
+
+% legend
+hl = legend([line1 line2 line3], 'NumColumns', 3);
 hl.Layout.Tile = 'south';
 
 % PLOT POSITION DATA
